@@ -19,7 +19,7 @@ if __name__ == '__main__':
     config = CommandArgs({
                           'train'   : ('', 'Path of training data file'),
                           'test'   : ('', 'Path of testing data file'),
-                          'class'   : (None, 'Class index'),
+                          'class'   : (0, 'Class index'),
                           'minsup'  : (0.1, 'Minimum support'),
                           'minconf' : (0.0, 'Minimum confidence'),
                           'format'  : ('spect', 'valid format of rules/item-sets'),
@@ -40,37 +40,37 @@ if __name__ == '__main__':
     min_conf = float(config.get_value('minconf'))
     rule_format = config.get_value('format')
     
-    for i in range(5):    
-        train_data = DataSet()
-        train_data.load(config.get_value('train')+'.'+str(i), class_index)
-        
-        test_data = DataSet()
-        test_data.load(config.get_value('test')+'.'+str(i), class_index)
-        
-        labels = sorted(train_data.count_classes().keys())
-          
-        '''
-        Generate association rules
-        '''
-        rule_miner = RuleMiner(rule_format, train_data.create_dataset_without_class())
-        rule_miner.generate_itemsets_and_rules(min_sup, min_conf)
-        rule_feature_dict = rule_miner.load_rules_features_as_dictionary()
-        print('#rules ', len(rule_feature_dict))
-          
-        freq_itemsets_dict = rule_miner.load_freq_itemset_dictionary()
-        rule_list, rule_features, rule_supports = preprocessRuleFeatureDict(rule_feature_dict)
-        print('#filtered rules ', len(rule_list))
-        train_args = {'data': train_data, 'rule': rule_list, 'label': labels, 'feature': rule_features, 'sup': rule_supports}
-        
-        m = rule_features.shape[1]
-        interesting_learner = None 
-        max_nrules = 2000
-        print('max nrules ', max_nrules)
-        if config.get_value('option') == 'net':
-            interesting_learner = NetMMAC(train_args, m, coverage=3, max_rules=max_nrules)
-        else:
-            interesting_learner = MMAC(train_args, m, coverage=3, max_rules=max_nrules)
-        
-        solutions = interesting_learner.fit(max_iters=nloop)
-        interesting_learner.save_solutions(config.get_value('out')+'.'+str(i), solutions)
+      
+    train_data = DataSet()
+    train_data.load(config.get_value('train'), class_index)
+    
+    test_data = DataSet()
+    test_data.load(config.get_value('test'), class_index)
+    
+    labels = sorted(train_data.count_classes().keys())
+      
+    '''
+    Generate association rules
+    '''
+    rule_miner = RuleMiner(rule_format, train_data.create_dataset_without_class())
+    rule_miner.generate_itemsets_and_rules(min_sup, min_conf)
+    rule_feature_dict = rule_miner.load_rules_features_as_dictionary()
+    print('#rules ', len(rule_feature_dict))
+      
+    freq_itemsets_dict = rule_miner.load_freq_itemset_dictionary()
+    rule_list, rule_features, rule_supports = preprocessRuleFeatureDict(rule_feature_dict)
+    print('#filtered rules ', len(rule_list))
+    train_args = {'data': train_data, 'rule': rule_list, 'label': labels, 'feature': rule_features, 'sup': rule_supports}
+    
+    m = rule_features.shape[1]
+    interesting_learner = None 
+    max_nrules = 2000
+    print('max nrules ', max_nrules)
+    if config.get_value('option') == 'net':
+        interesting_learner = NetMMAC(train_args, m, coverage=3, max_rules=max_nrules)
+    else:
+        interesting_learner = MMAC(train_args, m, coverage=3, max_rules=max_nrules)
+    
+    solutions = interesting_learner.fit(max_iters=nloop)
+    interesting_learner.save_solutions(config.get_value('out'), solutions)
 
